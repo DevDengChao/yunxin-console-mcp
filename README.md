@@ -189,7 +189,12 @@ node dist/cli.js login
 node dist/cli.js auth status
 ```
 
-CI 使用 Node 20/22/24，覆盖 Ubuntu 和 Windows。发布新版本：
+## 发布
+
+发布使用 npm Trusted Publisher + GitHub OIDC，不需要长期 `NPM_TOKEN`。
+首次配置见 [docs/release.md](docs/release.md)。
+
+发布新版本：
 
 ```bash
 npm version patch
