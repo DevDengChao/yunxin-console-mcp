@@ -39,11 +39,15 @@ async function call(
   path: string,
   query?: Record<string, string | number | boolean | undefined>,
   body?: unknown,
+  method: "get" | "post" = "post",
 ): Promise<PatchResult> {
   try {
-    const response = body
-      ? await client.post(path, query, body)
-      : await client.post(path, query);
+    const response =
+      method === "get"
+        ? await client.get(path, query)
+        : body
+          ? await client.post(path, query, body)
+          : await client.post(path, query);
     return { field, ok: true, response };
   } catch (error) {
     return { field, ok: false, error: error instanceof Error ? error.message : String(error) };
@@ -63,11 +67,18 @@ export async function updateImConfig(
 
   if (patch.imMainSwitch !== undefined) {
     results.push(
-      await call(client, "imMainSwitch", "/frontApi/app/openfunction", {
-        aid,
-        function: "IM_MAIN_SWITCH",
-        opetype: patch.imMainSwitch ? "open" : "close",
-      }),
+      await call(
+        client,
+        "imMainSwitch",
+        "/frontApi/app/openfunction",
+        {
+          aid,
+          function: "IM_MAIN_SWITCH",
+          opetype: patch.imMainSwitch ? "open" : "close",
+        },
+        undefined,
+        "get",
+      ),
     );
   }
   if (patch.authtypeset !== undefined) {
