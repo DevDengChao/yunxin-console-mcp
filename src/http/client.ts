@@ -1,4 +1,5 @@
 import { API_BASE_PATH, API_ORIGIN, type AppConfig } from "../config.js";
+import { appendAudit, redactQuery } from "../audit.js";
 import { getCookieHeader, type SessionData } from "../auth/session.js";
 
 export class FrontApiError extends Error {
@@ -106,43 +107,68 @@ export class FrontApiClient {
       );
     }
 
-    const headers: Record<string, string> = {
-      accept: "application/json, text/plain, */*",
-      "accept-language": "zh-CN",
-      "x-requested-with": "XMLHttpRequest",
-      origin: API_ORIGIN,
-      referer: `${API_ORIGIN}/global/home`,
-      "user-agent": this.config.userAgent,
-      cookie: this.cookieHeader,
-    };
+    const audit =
+      method !== "GET"
+        ? {
+            at: new Date().toISOString(),
+            method,
+            path,
+            query: redactQuery(options.query),
+          }
+        : null;
 
-    const init: RequestInit = { method, headers };
-    if (options.body !== undefined) {
-      headers["content-type"] = "application/json";
-      init.body = JSON.stringify(options.body);
-    }
+    try {
+      const headers: Record<string, string> = {
+        accept: "application/json, text/plain, */*",
+        "accept-language": "zh-CN",
+        "x-requested-with": "XMLHttpRequest",
+        origin: API_ORIGIN,
+        referer: `${API_ORIGIN}/global/home`,
+        "user-agent": this.config.userAgent,
+        cookie: this.cookieHeader,
+      };
 
-    const attempts = method === "GET" ? 3 : 1;
-    let lastError: unknown;
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
-      try {
-        const response = await fetch(url, {
-          ...init,
-          signal: AbortSignal.timeout(this.config.timeoutMs),
-        });
-        const text = await response.text();
-        return this.parseResponse<T>(text, response, path, options.raw ?? false);
-      } catch (error) {
-        if (error instanceof FrontApiError) throw error;
-        lastError = error;
-        const isLast = attempt === attempts;
-        if (isLast) break;
-        await sleep(250 * attempt);
+      const init: RequestInit = { method, headers };
+      if (options.body !== undefined) {
+        headers["content-type"] = "application/json";
+        init.body = JSON.stringify(options.body);
       }
-    }
 
-    const reason = lastError instanceof Error ? lastError.message : String(lastError);
-    throw new FrontApiError(`调用 ${path} 失败：${reason}`, { code: 0, path });
+      const attempts = method === "GET" ? 3 : 1;
+      let lastError: unknown;
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+          const response = await fetch(url, {
+            ...init,
+            signal: AbortSignal.timeout(this.config.timeoutMs),
+          });
+          const text = await response.text();
+          const parsed = this.parseResponse<T>(text, response, path, options.raw ?? false);
+          if (audit) {
+            appendAudit(this.config, { ...audit, event: "ok" });
+          }
+          return parsed;
+        } catch (error) {
+          if (error instanceof FrontApiError) throw error;
+          lastError = error;
+          const isLast = attempt === attempts;
+          if (isLast) break;
+          await sleep(250 * attempt);
+        }
+      }
+
+      const reason = lastError instanceof Error ? lastError.message : String(lastError);
+      throw new FrontApiError(`调用 ${path} 失败：${reason}`, { code: 0, path });
+    } catch (error) {
+      if (audit) {
+        appendAudit(this.config, {
+          ...audit,
+          event: "error",
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      throw error;
+    }
   }
 
   private parseResponse<T>(

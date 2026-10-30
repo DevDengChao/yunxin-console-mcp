@@ -140,4 +140,43 @@ describe("FrontApiClient", () => {
     expect(error.code).toBe(500);
     expect(error.message).toBe("boom");
   });
+
+  it("writes a redacted audit entry for writes", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yunxin-audit-"));
+    tempDirs.push(dir);
+    const config = loadConfig({ YUNXIN_CONSOLE_HOME: dir } as NodeJS.ProcessEnv);
+    const session: SessionData = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      cookies: [
+        {
+          name: "DEMO_SESS",
+          value: "secret",
+          domain: ".yunxin.163.com",
+          path: "/",
+          expires: "Infinity",
+        },
+      ],
+    };
+    globalThis.fetch = vi.fn(async () =>
+      jsonResponse({ res: 200, msg: { ok: true } }),
+    ) as unknown as typeof fetch;
+
+    const client = new FrontApiClient(config, session);
+    await client.post(
+      "/frontApi/app/updateInfo",
+      { aid: 1, appSecret: "topsecret" },
+      { appname: "x" },
+    );
+
+    const entries = fs
+      .readFileSync(config.auditLogFile, "utf8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(entries).toHaveLength(1);
+    expect(entries[0].method).toBe("POST");
+    expect(entries[0].query.appSecret).toBe("***");
+    expect(JSON.stringify(entries[0])).not.toContain("topsecret");
+  });
 });
