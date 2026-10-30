@@ -19,6 +19,8 @@
     "auth": "tsx src/cli.ts auth",
     "pretest": "npm run build",
     "test": "vitest run",
+    "presmoke": "npm run build",
+    "smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "engines": {

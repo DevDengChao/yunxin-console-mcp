@@ -7,14 +7,16 @@ export interface DateRange {
   end?: number;
 }
 
-/** Accepts epoch milliseconds or YYYY-MM-DD (interpreted as UTC, matching the console UI). */
+/** Accepts epoch milliseconds or YYYY-MM-DD (interpreted as Asia/Shanghai, matching the console UI). */
 export function toTimestamp(value: DateInput | undefined, endOfDay = false): number | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   if (typeof value === "number") return value;
   if (/^\d+$/.test(value)) return Number(value);
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
   if (dateOnly) {
-    return Date.parse(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`);
+    return Date.parse(
+      `${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}+08:00`,
+    );
   }
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? undefined : parsed;
@@ -24,22 +26,17 @@ export function dateRange(start?: DateInput, end?: DateInput): DateRange {
   return { start: toTimestamp(start), end: toTimestamp(end, true) };
 }
 
-/** Default window used by the console: today plus the previous six days. */
+const CHINA_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/** Default window used by the console: yesterday plus the previous six days, in Asia/Shanghai. */
 export function lastSevenDays(): { start: number; end: number } {
-  const now = new Date();
-  const end = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-    23,
-    59,
-    59,
-    999,
-  );
-  const startDate = new Date(end);
-  startDate.setUTCDate(startDate.getUTCDate() - 6);
-  startDate.setUTCHours(0, 0, 0, 0);
-  return { start: startDate.getTime(), end };
+  const chinaNow = new Date(Date.now() + CHINA_OFFSET_MS);
+  const year = chinaNow.getUTCFullYear();
+  const month = chinaNow.getUTCMonth();
+  const day = chinaNow.getUTCDate();
+  const end = Date.UTC(year, month, day - 1, 23, 59, 59, 999) - CHINA_OFFSET_MS;
+  const start = end - (7 * 24 * 60 * 60 * 1000 - 1);
+  return { start, end };
 }
 
 export async function getUserDayDetail(
@@ -82,10 +79,11 @@ export async function getUserProvinceStats(
   params: { start?: DateInput; end?: DateInput } = {},
 ): Promise<unknown> {
   const range = dateRange(params.start, params.end);
+  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/userProvinceStats", {
     appId: aid,
-    start: range.start,
-    end: range.end,
+    start: range.start ?? fallback.start,
+    end: range.end ?? fallback.end,
   });
 }
 
@@ -95,10 +93,11 @@ export async function getUserCityStats(
   params: { start?: DateInput; end?: DateInput; province?: string } = {},
 ): Promise<unknown> {
   const range = dateRange(params.start, params.end);
+  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/userCityStats", {
     appId: aid,
-    start: range.start,
-    end: range.end,
+    start: range.start ?? fallback.start,
+    end: range.end ?? fallback.end,
     province: params.province,
   });
 }

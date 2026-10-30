@@ -140,11 +140,18 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
 
 ## 验证情况
 
-- 31 个单元/集成测试通过，覆盖 Cookie 会话、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
-- 已在 DemoApp（appid 10000001）上用**当前值原样调用**以下写接口，均返回 `res:200`，回读配置无变化：
-  - `updateInfo`、`updateDeletemsgtime`、`updateRoaming`
-  - `msgfriendcheck/set`、`updateChatroomIONoNotify`、`updatePublishOffline`
+详细记录见 [docs/verification.md](docs/verification.md)。
+
+- 57 个单元/集成测试通过，覆盖 Cookie 会话、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
+- 已用真实账号和 DemoApp（appid 10000001）跑通只读工具：应用列表、应用详情、IM 配置、测试账号、用户统计、IM 消息统计、应用设置、证书、IP 白名单。
+- 已通过 MCP 工具执行 as-is 无副作用写测试：`deletemsgtime`、`roaming`、`sendMsgCheckFriend`、`chatroomIONoNotify`、`publishoffline`、`updateInfo` 全部返回 `res:200`，回读配置无变化。
 - `queryAppInfo` 显示该应用 `testAppTag=false`、`envtype=0`，接口层没有“测试环境”标记。
+
+复跑实时只读冒烟：
+
+```bash
+npm run smoke
+```
 
 ## 已知限制
 
