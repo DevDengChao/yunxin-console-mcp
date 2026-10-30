@@ -4,6 +4,9 @@ import { loadSession, type SessionData } from "./auth/session.js";
 import { FrontApiClient } from "./http/client.js";
 import { registerAuthTools, type ToolContext } from "./tools/auth.js";
 import { registerAppTools } from "./tools/apps.js";
+import { registerAppSettingTools } from "./tools/app-settings.js";
+import { registerImTools } from "./tools/im.js";
+import { registerStatsTools } from "./tools/stats.js";
 import { registerGenericTools } from "./tools/generic.js";
 import { SERVER_NAME, VERSION } from "./version.js";
 
@@ -29,6 +32,9 @@ export function createServer(config: AppConfig = loadConfig()): ServerBundle {
   const server = new McpServer({ name: SERVER_NAME, version: VERSION });
   registerAuthTools(server, context);
   registerAppTools(server, context);
+  registerAppSettingTools(server, context);
+  registerImTools(server, context);
+  registerStatsTools(server, context);
   registerGenericTools(server, context);
 
   return { server, context };

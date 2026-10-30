@@ -4,13 +4,14 @@ export function assertWriteAllowed(
   config: AppConfig,
   confirm: boolean | undefined,
   action: string,
+  options: { requireConfirm?: boolean } = {},
 ): void {
   if (!config.allowWrite) {
     throw new Error(
       `写操作已禁用（YUNXIN_CONSOLE_ALLOW_WRITE=false）。如需执行「${action}」，请重新启动 MCP 并设置 YUNXIN_CONSOLE_ALLOW_WRITE=true。`,
     );
   }
-  if (!confirm) {
+  if (options.requireConfirm !== false && !confirm) {
     throw new Error(`「${action}」属于写操作，请在参数中传入 confirm: true 以确认执行。`);
   }
 }
