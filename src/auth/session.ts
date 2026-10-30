@@ -64,6 +64,15 @@ export function saveSession(config: AppConfig, session: SessionData): void {
   });
 }
 
+export function sessionFromCookieHeader(header: string, user?: SessionUser): SessionData {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    user,
+    cookies: parseCookieHeader(header),
+  };
+}
+
 export function sessionFromStorageState(
   state: PlaywrightStorageState,
   user?: SessionUser,
@@ -91,7 +100,8 @@ function cookieExpires(cookie: StoredCookie): Date | "Infinity" {
     return "Infinity";
   }
   if (typeof cookie.expires === "number") {
-    // Playwright uses seconds; tolerate milliseconds too.
+    // Chrome uses -1 for session cookies; Playwright may use seconds or milliseconds.
+    if (cookie.expires <= 0) return "Infinity";
     const seconds = cookie.expires > 10_000_000_000 ? cookie.expires / 1000 : cookie.expires;
     return new Date(seconds * 1000);
   }
