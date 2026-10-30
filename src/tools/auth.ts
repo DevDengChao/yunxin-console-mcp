@@ -1,13 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AppConfig } from "../config.js";
-import type { SessionData } from "../auth/session.js";
+import { getCookieStats, type SessionData } from "../auth/session.js";
 import type { FrontApiClient } from "../http/client.js";
 import { AuthExpiredError } from "../http/client.js";
 import { jsonResult, errorResult } from "./helpers.js";
 
 export interface ToolContext {
   config: AppConfig;
-  session: SessionData | null;
+  readonly session: SessionData | null;
+  readonly sessionError: string | null;
   client: FrontApiClient;
 }
 
@@ -22,6 +23,16 @@ export function registerAuthTools(server: McpServer, context: ToolContext): void
       annotations: { readOnlyHint: true },
     },
     async () => {
+      const stats = getCookieStats(context.config, context.session);
+      const sessionInfo = {
+        sessionSavedAt: context.session?.savedAt ?? null,
+        sessionSource: context.config.cookieOverride ? "env" : "file",
+        sessionFile: context.config.sessionFile,
+        cookieCount: stats.usedNames.length,
+        cookieNames: stats.usedNames,
+        droppedCookies: stats.dropped.map((item) => item.name),
+        sessionError: context.sessionError,
+      };
       try {
         const user = await context.client.getUserInfo();
         return jsonResult({
@@ -29,8 +40,7 @@ export function registerAuthTools(server: McpServer, context: ToolContext): void
           user,
           defaultApp: context.config.defaultApp ?? null,
           allowWrite: context.config.allowWrite,
-          sessionSavedAt: context.session?.savedAt ?? null,
-          sessionSource: context.config.cookieOverride ? "env" : "file",
+          ...sessionInfo,
         });
       } catch (error) {
         if (error instanceof AuthExpiredError) {
@@ -39,6 +49,7 @@ export function registerAuthTools(server: McpServer, context: ToolContext): void
             message: error.message,
             defaultApp: context.config.defaultApp ?? null,
             allowWrite: context.config.allowWrite,
+            ...sessionInfo,
           });
         }
         return errorResult(error);

@@ -82,25 +82,38 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): URL {
 }
 
 export class FrontApiClient {
-  private readonly cookieHeader: string;
+  private lastSession: SessionData | null | undefined = undefined;
+  private lastOverride: string | undefined = undefined;
+  private headerCache = "";
 
   constructor(
     private readonly config: AppConfig,
-    session: SessionData | null,
-  ) {
-    this.cookieHeader = getCookieHeader(config, session);
+    private readonly sessionSource: SessionData | null | (() => SessionData | null),
+  ) {}
+
+  /** Re-resolves the session so a long-running server sees auth import/login. */
+  private currentCookieHeader(): string {
+    const session =
+      typeof this.sessionSource === "function" ? this.sessionSource() : this.sessionSource;
+    if (session !== this.lastSession || this.config.cookieOverride !== this.lastOverride) {
+      this.headerCache = getCookieHeader(this.config, session);
+      this.lastSession = session;
+      this.lastOverride = this.config.cookieOverride;
+    }
+    return this.headerCache;
   }
 
   hasSession(): boolean {
-    return this.cookieHeader.length > 0;
+    return this.currentCookieHeader().length > 0;
   }
 
   async request<T>(options: RequestOptions): Promise<T> {
     const method = options.method ?? "GET";
     const url = buildUrl(options.path, options.query);
     const path = url.pathname;
+    const cookieHeader = this.currentCookieHeader();
 
-    if (!this.cookieHeader) {
+    if (!cookieHeader) {
       throw new AuthExpiredError(
         "未找到云信控制台登录态。请先运行 `yunxin-console-mcp login` 完成登录，或设置 YUNXIN_CONSOLE_COOKIE。",
         { path },
@@ -126,7 +139,7 @@ export class FrontApiClient {
         origin: API_ORIGIN,
         referer: `${API_ORIGIN}/global/home`,
         "user-agent": this.config.userAgent,
-        cookie: this.cookieHeader,
+        cookie: cookieHeader,
       };
 
       const init: RequestInit = { method, headers };

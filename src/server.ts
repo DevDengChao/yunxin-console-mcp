@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { loadConfig, type AppConfig } from "./config.js";
-import { loadSession, type SessionData } from "./auth/session.js";
+import { SessionStore } from "./auth/store.js";
 import { FrontApiClient } from "./http/client.js";
 import { registerAuthTools, type ToolContext } from "./tools/auth.js";
 import { registerAppTools } from "./tools/apps.js";
@@ -25,17 +25,21 @@ export function registerAllTools(server: McpServer, context: ToolContext): void 
 }
 
 export function createServer(config: AppConfig = loadConfig()): ServerBundle {
-  let session: SessionData | null = null;
-  try {
-    session = loadSession(config);
-  } catch (error) {
-    console.error(`[${SERVER_NAME}] failed to load session:`, error);
+  const store = new SessionStore(config);
+  store.get();
+  if (store.error()) {
+    console.error(`[${SERVER_NAME}] failed to load session:`, store.error());
   }
 
   const context: ToolContext = {
     config,
-    session,
-    client: new FrontApiClient(config, session),
+    get session() {
+      return store.get();
+    },
+    get sessionError() {
+      return store.error();
+    },
+    client: new FrontApiClient(config, () => store.get()),
   };
 
   const server = new McpServer({ name: SERVER_NAME, version: VERSION });

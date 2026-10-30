@@ -11,7 +11,8 @@ function printHelp(): void {
   yunxin-console-mcp auth status  检查登录态
   yunxin-console-mcp auth import --cookie "name=value; ..."
                                   或 --curl "curl ..." / --curl-file curl.txt
-                                  导入浏览器 Cookie
+                                  / --file cookie.txt / --stdin
+                                  导入浏览器 Cookie（长 Cookie 建议用文件或管道）
   yunxin-console-mcp auth logout  删除本地登录态
 
 环境变量：

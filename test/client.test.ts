@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadConfig } from "../src/config.js";
-import type { SessionData } from "../src/auth/session.js";
+import { sessionFromCookieHeader, type SessionData } from "../src/auth/session.js";
 import { AuthExpiredError, FrontApiClient, FrontApiError } from "../src/http/client.js";
 
 const originalFetch = globalThis.fetch;
@@ -63,6 +63,27 @@ describe("FrontApiClient", () => {
     expect(String(url)).toContain("/frontApi/app/queryAppInfo?aid=10000001");
     expect((init.headers as Record<string, string>).cookie).toContain("DEMO_SESS=secret");
     expect((init.headers as Record<string, string>)["x-requested-with"]).toBe("XMLHttpRequest");
+  });
+
+  it("reloads cookies for each request through a session provider", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "yunxin-reload-"));
+    tempDirs.push(dir);
+    const config = loadConfig({ YUNXIN_CONSOLE_HOME: dir } as NodeJS.ProcessEnv);
+    const fetchMock = vi.fn(async () => jsonResponse({ res: 200, msg: { ok: true } }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    let session = sessionFromCookieHeader("a=1");
+    const client = new FrontApiClient(config, () => session);
+    await client.get("/frontApi/app/queryAppInfo");
+    session = sessionFromCookieHeader("a=2");
+    await client.get("/frontApi/app/queryAppInfo");
+
+    const cookies = fetchMock.mock.calls.map((call) => {
+      const init = call[1] as RequestInit;
+      return (init.headers as Record<string, string>).cookie;
+    });
+    expect(cookies[0]).toContain("a=1");
+    expect(cookies[1]).toContain("a=2");
   });
 
   it("returns the full envelope in raw mode", async () => {

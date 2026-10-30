@@ -45,6 +45,13 @@
 - `yunxin_im_antispam config`：应用未开通 IM 安全通，接口返回「请先开通IM安全通服务」。
 - `yunxin_stats_users city`：`province=中国` 时返回空列表，可能是当前活跃用户太少，没有城市维度数据。
 
+## Cookie 导入回归
+
+- 复现：cURL 的 Cookie 值里带引号（例如 `channel="h=media&..."`）时，旧正则会在引号处截断；多个 `cookie:` 头时只保留第一个，导致 `urs_t`/`urs_u` 丢失。
+- 修复：使用 shell 扫描器合并所有 Cookie 头，按外层引号解析，兼容 bash、cmd.exe `^"` 和转义引号。
+- 导入结果会输出解析数、去重数、可发送数以及首末 Cookie 名称；无法发送的 Cookie 会明确告警。
+- 回归测试覆盖：17 段真实结构（值已脱敏）、多个 `cookie:` 头、cmd 格式、转义引号、50 段 Cookie 回环。
+
 统计接口的日期参数按 **Asia/Shanghai** 解释，与后台页面一致；默认范围是「昨天往前 7 天」。
 
 ## 写接口（as-is 无副作用）

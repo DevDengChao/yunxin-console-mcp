@@ -73,6 +73,18 @@ npx -y @devdengchao/yunxin-console-mcp auth import --curl "curl 'https://app.yun
 npx -y @devdengchao/yunxin-console-mcp auth import --curl-file curl.txt
 ```
 
+Cookie 很长、Cookie 值里带引号，或者浏览器把 Cookie 拆成多个 `cookie:` 头时，建议用文件或管道，避免命令行长度和引号问题：
+
+```bash
+npx -y @devdengchao/yunxin-console-mcp auth import --file cookie.txt
+pbpaste | npx -y @devdengchao/yunxin-console-mcp auth import --stdin
+```
+
+`--file` 会自动识别 raw Cookie 头和 cURL 文本；`--curl-file` 强制按 cURL 解析。
+导入结果会显示“解析 N 个 / 去重后 N 个 / 可发送 N 个”以及首末 Cookie 名称；
+如果预期存在的 Cookie（例如 `urs_t`、`urs_u`）没有出现在列表里，说明输入可能不完整，
+请改用文件或管道重新导入。多个 `cookie:` 头会自动合并，不会只保留第一个。
+
 检查登录态：
 
 ```bash
@@ -141,6 +153,11 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
 - 删除、重置密钥、封禁、发布、存储清理等破坏性操作必须传 `confirm: true`。
 - AppSecret 默认打码；需要完整值时显式传 `includeSecret: true`。
 - 所有非 GET 请求写入本地审计日志，Cookie、AppSecret、Token 等字段自动脱敏。
+- 会话文件 `session.json`、`storage-state.json` 在 POSIX 下以 `0600` 写入，配置目录为 `0700`；
+  Windows 下依赖用户配置目录自身的 ACL。
+- 多个项目默认共享同一个配置目录。需要隔离登录态时，为每个项目设置不同的
+  `YUNXIN_CONSOLE_HOME`。
+- 导入/重新登录后，运行中的 MCP Server 会按会话文件变化自动重载，无需重启客户端。
 - 审计日志默认位于：
   - Windows：`%APPDATA%\yunxin-console-mcp\audit.log`
   - macOS/Linux：`~/.config/yunxin-console-mcp/audit.log`
@@ -150,7 +167,7 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `YUNXIN_CONSOLE_HOME` | 系统配置目录 | 会话、Chrome 配置和审计日志目录 |
-| `YUNXIN_CONSOLE_COOKIE` | - | 直接提供 Cookie，优先于本地会话 |
+| `YUNXIN_CONSOLE_COOKIE` | - | 直接提供 Cookie，优先于本地会话；支持 `Cookie:` 前缀和多行格式 |
 | `YUNXIN_CONSOLE_DEFAULT_APP` | - | 默认应用名称或 appid |
 | `YUNXIN_CONSOLE_ALLOW_WRITE` | `true` | 设为 `false` 进入只读模式 |
 | `YUNXIN_CONSOLE_TIMEOUT_MS` | `15000` | HTTP 超时时间 |
@@ -161,7 +178,7 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
 
 详细记录见 [docs/verification.md](docs/verification.md)。账号、应用和数据均已脱敏。
 
-- 58 个单元/集成测试通过，覆盖 Cookie 会话、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
+- 78 个单元/集成测试通过，覆盖 Cookie 会话、cURL 多 header 合并、会话热加载、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
 - 已在真实控制台环境跑通只读工具：应用列表、应用详情、IM 配置、测试账号、用户统计、IM 消息统计、应用设置、证书、IP 白名单。
 - 已通过 MCP 工具执行 as-is 无副作用写测试：`deletemsgtime`、`roaming`、`sendMsgCheckFriend`、`chatroomIONoNotify`、`publishoffline`、`updateInfo` 全部返回 `res:200`，回读配置无变化。
 

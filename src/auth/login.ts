@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { chromium, type BrowserContext, type Page } from "playwright-core";
 import type { AppConfig } from "../config.js";
 import type { SessionUser } from "./session.js";
-import { saveSession, sessionFromStorageState } from "./session.js";
+import { saveSession, sessionFromStorageState, writePrivateFile } from "./session.js";
 
 export interface LoginOptions {
   /** Total time to wait for the user to log in. Defaults to 15 minutes. */
@@ -98,15 +98,24 @@ export async function login(config: AppConfig, options: LoginOptions = {}): Prom
       const user = await fetchUserInfo(page);
       if (user) {
         const state = await context.storageState();
-        fs.mkdirSync(config.homeDir, { recursive: true });
-        fs.writeFileSync(config.storageStateFile, `${JSON.stringify(state, null, 2)}\n`, {
-          encoding: "utf8",
-          mode: 0o600,
-        });
-        saveSession(config, sessionFromStorageState(state, user));
+        fs.mkdirSync(config.homeDir, { recursive: true, mode: 0o700 });
+        writePrivateFile(
+          config.storageStateFile,
+          `${JSON.stringify(state, null, 2)}\n`,
+        );
+        const session = sessionFromStorageState(state, user);
+        saveSession(config, session);
         console.log(
           `[login] 登录成功：${user.loginAccount ?? user.phone ?? "unknown"} / ${user.corpName ?? ""}`,
         );
+        console.log(
+          `[login] 已保存 ${session.cookies.length} 个 Cookie 到 ${config.sessionFile}`,
+        );
+        if (config.cookieOverride) {
+          console.log(
+            "[login] 注意：当前设置了 YUNXIN_CONSOLE_COOKIE，环境变量会覆盖刚保存的登录态。",
+          );
+        }
         return user;
       }
       if (Date.now() - lastFocus > 20_000) {
