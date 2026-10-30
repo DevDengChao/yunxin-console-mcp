@@ -1,0 +1,46 @@
+{
+  "name": "yunxin-console-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the NetEase Yunxin admin console (app management, IM configuration, statistics)",
+  "type": "module",
+  "bin": {
+    "yunxin-console-mcp": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "login": "tsx src/cli.ts login",
+    "auth": "tsx src/cli.ts auth",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "yunxin",
+    "netease",
+    "im",
+    "console"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "playwright-core": "^1.64.1",
+    "tough-cookie": "^6.0.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

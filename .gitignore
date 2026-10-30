@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+*.log
+
+# Local session data must never be committed
+.yunxin-console/
+session.json
+storage-state.json
+chrome-profile/
+audit.log
