@@ -15,6 +15,15 @@ export interface ServerBundle {
   context: ToolContext;
 }
 
+export function registerAllTools(server: McpServer, context: ToolContext): void {
+  registerAuthTools(server, context);
+  registerAppTools(server, context);
+  registerAppSettingTools(server, context);
+  registerImTools(server, context);
+  registerStatsTools(server, context);
+  registerGenericTools(server, context);
+}
+
 export function createServer(config: AppConfig = loadConfig()): ServerBundle {
   let session: SessionData | null = null;
   try {
@@ -30,12 +39,7 @@ export function createServer(config: AppConfig = loadConfig()): ServerBundle {
   };
 
   const server = new McpServer({ name: SERVER_NAME, version: VERSION });
-  registerAuthTools(server, context);
-  registerAppTools(server, context);
-  registerAppSettingTools(server, context);
-  registerImTools(server, context);
-  registerStatsTools(server, context);
-  registerGenericTools(server, context);
+  registerAllTools(server, context);
 
   return { server, context };
 }

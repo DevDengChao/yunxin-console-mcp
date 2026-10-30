@@ -16,8 +16,13 @@ export function assertWriteAllowed(
   }
 }
 
+const WRITE_HINT =
+  /\/(?:operate|open|close|create|update|delete|set|add|edit|publish|refresh|reset|send|confirm|cancel|recover|block|unblock|switch|save|apply|upload|pay|recharge|random|embed|train|preview|downgrade|reopen|remove|modify|change|bind|unbind|start|stop|enable|disable|forbid|resume)(?:[A-Z/]|$)/i;
+
+const READ_HINT =
+  /(?:query|list|get|detail|search|stats?|statistic|export|history|records?|count|price|overview|exists|status|download|fivemin|used|balance|guide|banner)(?:[A-Z/]|$)/i;
+
 export function isLikelyReadOnlyPath(path: string): boolean {
-  return /(?:query|list|get|detail|search|stats?|statistic|info|export|history|records?|count|price|overview|exists|status|download|fivemin|used|balance|guide|banner)(?:[/?]|$)/i.test(
-    path,
-  );
+  if (WRITE_HINT.test(path)) return false;
+  return READ_HINT.test(path);
 }
