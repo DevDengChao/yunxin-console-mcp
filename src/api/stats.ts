@@ -24,6 +24,24 @@ export function dateRange(start?: DateInput, end?: DateInput): DateRange {
   return { start: toTimestamp(start), end: toTimestamp(end, true) };
 }
 
+/** Default window used by the console: today plus the previous six days. */
+export function lastSevenDays(): { start: number; end: number } {
+  const now = new Date();
+  const end = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    23,
+    59,
+    59,
+    999,
+  );
+  const startDate = new Date(end);
+  startDate.setUTCDate(startDate.getUTCDate() - 6);
+  startDate.setUTCHours(0, 0, 0, 0);
+  return { start: startDate.getTime(), end };
+}
+
 export async function getUserDayDetail(
   client: FrontApiClient,
   aid: number,
@@ -47,12 +65,13 @@ export async function getUserCountStats(
   } = {},
 ): Promise<unknown> {
   const range = dateRange(params.start, params.end);
+  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/userCountStats", {
     appId: aid,
     datacycle: params.datacycle ?? "BYDAY",
     type: params.type ?? 1,
-    start: range.start,
-    end: range.end,
+    start: range.start ?? fallback.start,
+    end: range.end ?? fallback.end,
     os: params.os,
   });
 }
@@ -101,12 +120,13 @@ export async function getImStats(
   },
 ): Promise<unknown> {
   const range = dateRange(params.start, params.end);
+  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/IMStats", {
     appId: aid,
     tab: params.tab,
     childTab: params.childTab,
-    start: range.start,
-    end: range.end,
+    start: range.start ?? fallback.start,
+    end: range.end ?? fallback.end,
     productNumber: params.productNumber,
     yiDunBusinessId: params.yiDunBusinessId,
   });

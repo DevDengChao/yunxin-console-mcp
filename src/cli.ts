@@ -10,6 +10,7 @@ function printHelp(): void {
   yunxin-console-mcp login        打开 Chrome 完成一次登录并保存会话
   yunxin-console-mcp auth status  检查登录态
   yunxin-console-mcp auth import --cookie "name=value; ..."
+                                  或 --curl "curl ..." / --curl-file curl.txt
                                   导入浏览器 Cookie
   yunxin-console-mcp auth logout  删除本地登录态
 

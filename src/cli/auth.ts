@@ -43,15 +43,36 @@ export async function authStatus(config: AppConfig): Promise<void> {
   }
 }
 
+export function extractCookieFromCurl(curl: string): string {
+  const patterns = [
+    /(?:-H|--header)\s+['"]cookie:\s*([^'"]+)['"]/i,
+    /(?:-b|--cookie)\s+['"]([^'"]+)['"]/i,
+    /cookie:\s*([^\r\n'"]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = curl.match(pattern);
+    if (match?.[1]?.trim()) return match[1].trim();
+  }
+  throw new Error("未能从 cURL 中解析出 Cookie 请求头。");
+}
+
 export async function authImport(config: AppConfig, args: string[]): Promise<void> {
   const cookie = argValue(args, "--cookie");
   const file = argValue(args, "--file");
+  const curl = argValue(args, "--curl");
+  const curlFile = argValue(args, "--curl-file");
   let header = cookie;
   if (!header && file) {
     header = fs.readFileSync(file, "utf8").trim();
   }
+  if (!header && (curl || curlFile)) {
+    const text = curl ?? fs.readFileSync(curlFile as string, "utf8");
+    header = extractCookieFromCurl(text);
+  }
   if (!header) {
-    throw new Error("用法：yunxin-console-mcp auth import --cookie \"name=value; ...\" 或 --file cookies.txt");
+    throw new Error(
+      "用法：yunxin-console-mcp auth import --cookie \"name=value; ...\" 或 --curl \"curl ...\" 或 --curl-file curl.txt",
+    );
   }
 
   const session = sessionFromCookieHeader(header);
