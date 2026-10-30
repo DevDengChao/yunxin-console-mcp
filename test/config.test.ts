@@ -1,10 +1,13 @@
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.js";
 
 describe("loadConfig", () => {
   it("uses YUNXIN_CONSOLE_HOME when provided", () => {
-    const config = loadConfig({ YUNXIN_CONSOLE_HOME: "C:\\tmp\\yx" } as NodeJS.ProcessEnv);
-    expect(config.homeDir).toBe("C:\\tmp\\yx");
+    const home = path.join(os.tmpdir(), "yx-config-test");
+    const config = loadConfig({ YUNXIN_CONSOLE_HOME: home } as NodeJS.ProcessEnv);
+    expect(config.homeDir).toBe(path.resolve(home));
     expect(config.sessionFile).toContain("session.json");
   });
 
