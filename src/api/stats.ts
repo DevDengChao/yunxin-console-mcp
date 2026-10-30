@@ -28,6 +28,23 @@ export function dateRange(start?: DateInput, end?: DateInput): DateRange {
 
 const CHINA_OFFSET_MS = 8 * 60 * 60 * 1000;
 
+/** Day key used by region stats: UTC midnight of the date (matches the console `time` param). */
+export function toDayKey(value?: DateInput): number {
+  if (value === undefined || value === null || value === "") return yesterdayDayKey();
+  if (typeof value === "number") return value;
+  if (/^\d+$/.test(value)) return Number(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return Date.parse(`${value}T00:00:00.000Z`);
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? yesterdayDayKey() : parsed;
+}
+
+export function yesterdayDayKey(): number {
+  const chinaNow = new Date(Date.now() + CHINA_OFFSET_MS);
+  return Date.UTC(chinaNow.getUTCFullYear(), chinaNow.getUTCMonth(), chinaNow.getUTCDate() - 1);
+}
+
 /** Default window used by the console: yesterday plus the previous six days, in Asia/Shanghai. */
 export function lastSevenDays(): { start: number; end: number } {
   const chinaNow = new Date(Date.now() + CHINA_OFFSET_MS);
@@ -42,11 +59,9 @@ export function lastSevenDays(): { start: number; end: number } {
 export async function getUserDayDetail(
   client: FrontApiClient,
   aid: number,
-  date?: DateInput,
 ): Promise<unknown> {
   return client.post("/frontApi/app/statistics/userDayDetail", {
     appId: aid,
-    date: toTimestamp(date),
   });
 }
 
@@ -76,29 +91,28 @@ export async function getUserCountStats(
 export async function getUserProvinceStats(
   client: FrontApiClient,
   aid: number,
-  params: { start?: DateInput; end?: DateInput } = {},
+  params: { date?: DateInput; area?: string; os?: string; type?: number } = {},
 ): Promise<unknown> {
-  const range = dateRange(params.start, params.end);
-  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/userProvinceStats", {
     appId: aid,
-    start: range.start ?? fallback.start,
-    end: range.end ?? fallback.end,
+    area: params.area ?? "GLOBAL",
+    time: toDayKey(params.date),
+    type: params.type ?? 1,
+    os: params.os,
   });
 }
 
 export async function getUserCityStats(
   client: FrontApiClient,
   aid: number,
-  params: { start?: DateInput; end?: DateInput; province?: string } = {},
+  params: { date?: DateInput; province: string; os?: string; type?: number },
 ): Promise<unknown> {
-  const range = dateRange(params.start, params.end);
-  const fallback = lastSevenDays();
   return client.post("/frontApi/app/statistics/userCityStats", {
     appId: aid,
-    start: range.start ?? fallback.start,
-    end: range.end ?? fallback.end,
     province: params.province,
+    time: toDayKey(params.date),
+    type: params.type ?? 1,
+    os: params.os,
   });
 }
 

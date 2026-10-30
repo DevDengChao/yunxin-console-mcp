@@ -23,26 +23,27 @@ export function registerStatsTools(server: McpServer, context: ToolContext): voi
     {
       title: "Query IM user statistics",
       description:
-        "用户统计：day 昨日概览、count 按日/小时趋势、province 省份分布、city 城市分布、realtime 实时在线。日期支持 YYYY-MM-DD 或毫秒时间戳。",
+        "用户统计：day 昨日概览、count 按日/小时趋势、province 省份分布、city 城市分布、realtime 实时在线。日期支持 YYYY-MM-DD 或毫秒时间戳；province/city 的日期为所选自然日。",
       inputSchema: {
         action: z.enum(["day", "count", "province", "city", "realtime"]),
         app: appSchema,
-        date: dateSchema.describe("action=day 的日期，默认昨天"),
+        date: dateSchema.describe("province/city 的统计日期，默认昨天"),
         start: dateSchema.describe("趋势开始日期"),
         end: dateSchema.describe("趋势结束日期"),
         datacycle: z.enum(["BYDAY", "BYHOUR"]).optional(),
         type: z.number().int().optional().describe("统计类型，默认 1"),
         os: z.string().optional().describe("操作系统过滤，例如 Android/iOS/PC/Web"),
-        province: z.string().optional().describe("action=city 的省份过滤"),
+        area: z.string().optional().describe("province 的区域，默认 GLOBAL"),
+        province: z.string().optional().describe("action=city 必填，省份名称"),
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ action, app, date, start, end, datacycle, type, os, province }) => {
+    async ({ action, app, date, start, end, datacycle, type, os, area, province }) => {
       try {
         const resolved = await resolveAppForTool(context, app);
         switch (action) {
           case "day":
-            return jsonResult(await getUserDayDetail(context.client, resolved.appid, date));
+            return jsonResult(await getUserDayDetail(context.client, resolved.appid));
           case "count":
             return jsonResult(
               await getUserCountStats(context.client, resolved.appid, {
@@ -55,11 +56,22 @@ export function registerStatsTools(server: McpServer, context: ToolContext): voi
             );
           case "province":
             return jsonResult(
-              await getUserProvinceStats(context.client, resolved.appid, { start, end }),
+              await getUserProvinceStats(context.client, resolved.appid, {
+                date,
+                area,
+                os,
+                type,
+              }),
             );
           case "city":
+            if (!province) throw new Error("action=city 需要提供 province");
             return jsonResult(
-              await getUserCityStats(context.client, resolved.appid, { start, end, province }),
+              await getUserCityStats(context.client, resolved.appid, {
+                date,
+                province,
+                os,
+                type,
+              }),
             );
           default:
             return jsonResult(await getUserRealTime(context.client, resolved.appid));

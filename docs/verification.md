@@ -22,6 +22,26 @@
 | `yunxin_app_admin settings` | 返回产品开通状态和余额 |
 | `yunxin_app_cert list` | 返回空证书列表 |
 | `yunxin_app_ip_whitelist list` | 返回空白名单 |
+| `yunxin_stats_users province` | 返回 232 个地区，中国活跃 4 |
+| `yunxin_stats_users city` | 返回 200，城市列表为空（当前活跃用户少） |
+| `yunxin_app_identity get` | 返回 iOS/Android/HarmonyOS 标识配置 |
+| `yunxin_app_callback get` | 返回回调地址、超时、失败策略和事件开关 |
+| `yunxin_app_custom_push list` | 返回空列表 |
+| `yunxin_app_third_push get` | 返回空列表 |
+| `yunxin_im_robot list` | 返回 `total: 0` |
+| `yunxin_im_digital_human list` | 返回空列表 |
+| `yunxin_im_storage_cleanup list` | 返回 `total: 0` |
+| `yunxin_app_admin change_records` | 返回 104 条变更记录 |
+| `yunxin_app_admin msg_copy` | 返回抄送配置 |
+| `yunxin_app_admin function_matrix` | 返回功能矩阵 |
+
+## 控制台侧已知问题
+
+以下错误在控制台页面本身也会出现，不是 MCP 映射问题：
+
+- `yunxin_im_lexicon list`：`/frontApi/app/cantispam/keyword/query` 返回「参数错误」，后台敏感词页面同样显示「暂无数据 参数错误」。
+- `yunxin_im_antispam config`：应用未开通 IM 安全通，接口返回「请先开通IM安全通服务」。
+- `yunxin_stats_users city`：`province=中国` 时返回空列表，可能是当前活跃用户太少，没有城市维度数据。
 
 统计接口的日期参数按 **Asia/Shanghai** 解释，与后台页面一致；默认范围是「昨天往前 7 天」。
 

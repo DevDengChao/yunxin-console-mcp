@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toTimestamp, dateRange, lastSevenDays } from "../src/api/stats.js";
+import { toTimestamp, dateRange, lastSevenDays, toDayKey, yesterdayDayKey } from "../src/api/stats.js";
 
 describe("statistics date helpers", () => {
   it("parses date-only values as Asia/Shanghai to match the console", () => {
@@ -29,5 +29,12 @@ describe("statistics date helpers", () => {
     const end = new Date(range.end);
     expect(end.getUTCHours()).toBe(15);
     expect(end.getUTCMinutes()).toBe(59);
+  });
+
+  it("builds day keys for region statistics", () => {
+    expect(toDayKey("2026-10-29")).toBe(Date.UTC(2026, 9, 29));
+    const key = yesterdayDayKey();
+    expect(key).toBeLessThan(Date.now());
+    expect(key % (24 * 60 * 60 * 1000)).toBe(0);
   });
 });

@@ -121,6 +121,7 @@ export class FrontApiClient {
       const headers: Record<string, string> = {
         accept: "application/json, text/plain, */*",
         "accept-language": "zh-CN",
+        "international-sites": "false",
         "x-requested-with": "XMLHttpRequest",
         origin: API_ORIGIN,
         referer: `${API_ORIGIN}/global/home`,
