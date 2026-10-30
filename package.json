@@ -1,17 +1,33 @@
 {
-  "name": "yunxin-console-mcp",
+  "name": "@devdengchao/yunxin-console-mcp",
   "version": "0.1.0",
-  "description": "MCP server for the NetEase Yunxin admin console (app management, IM configuration, statistics)",
+  "description": "Unofficial MCP server for the NetEase Yunxin admin console (app management, IM configuration, statistics)",
   "type": "module",
   "bin": {
     "yunxin-console-mcp": "dist/cli.js"
   },
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "README.md",
-    "docs"
+    "docs",
+    "LICENSE",
+    "SECURITY.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevDengChao/yunxin-console-mcp.git"
+  },
+  "homepage": "https://github.com/DevDengChao/yunxin-console-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/DevDengChao/yunxin-console-mcp/issues"
+  },
+  "author": "DevDengChao <2325690622@qq.com>",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/index.ts",
@@ -22,17 +38,22 @@
     "test": "vitest run",
     "presmoke": "npm run build",
     "smoke": "node scripts/smoke.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build && npm run typecheck && vitest run"
   },
   "engines": {
     "node": ">=20"
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "yunxin",
     "netease",
     "im",
-    "console"
+    "rtc",
+    "console",
+    "admin"
   ],
   "license": "MIT",
   "dependencies": {

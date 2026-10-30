@@ -36,7 +36,7 @@ describe("app resolution", () => {
 
   it("resolves case-insensitively", async () => {
     const client = fakeClient();
-    const app = await resolveApp(client, { app: "hiline-cs" });
+    const app = await resolveApp(client, { app: "DEMOAPP" });
     expect(app.appid).toBe(10000001);
   });
 
@@ -51,7 +51,7 @@ describe("app resolution", () => {
       ...apps,
       { appid: 1, appname: "DemoApp-Test-2", imPkg: "FREE_2024" },
     ]);
-    await expect(resolveApp(client, { app: "DemoApp" })).rejects.toBeInstanceOf(
+    await expect(resolveApp(client, { app: "DemoApp-" })).rejects.toBeInstanceOf(
       AppResolutionError,
     );
   });

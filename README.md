@@ -1,11 +1,15 @@
 # yunxin-console-mcp
 
+[![CI](https://github.com/DevDengChao/yunxin-console-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/DevDengChao/yunxin-console-mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@devdengchao/yunxin-console-mcp.svg)](https://www.npmjs.com/package/@devdengchao/yunxin-console-mcp)
+[![license](https://img.shields.io/npm/l/@devdengchao/yunxin-console-mcp.svg)](LICENSE)
+
 网易云信控制台 MCP Server。官方 [yunxin-mcp-server](https://github.com/netease-im/yunxin-mcp-server)
 覆盖的是服务端 IM/RTC API；本项目补全**应用后台管理**能力：应用管理、AppKey/AppSecret、
 回调、证书、推送配置、IM 功能开关、测试账号、敏感词、数字人和统计。
 
-> 本项目调用的是云信控制台内部 `frontApi`，属于非官方实现。网易调整控制台后接口可能变化，
-> 请自行评估风险。
+> **非官方项目**：本项目调用云信控制台内部 `frontApi`，与网易云信无官方关联。
+> 控制台升级后接口可能变化；请仅用于管理你拥有权限的账号，并遵守云信服务条款。
 
 ## 功能
 
@@ -22,9 +26,24 @@
 
 ## 安装
 
+从 npm 安装：
+
 ```bash
-npm install -g yunxin-console-mcp
-# 或从源码运行
+npx -y @devdengchao/yunxin-console-mcp --version
+npm install -g @devdengchao/yunxin-console-mcp
+```
+
+直接从 GitHub 安装（会自动构建）：
+
+```bash
+npx -y github:DevDengChao/yunxin-console-mcp
+```
+
+从源码运行：
+
+```bash
+git clone https://github.com/DevDengChao/yunxin-console-mcp.git
+cd yunxin-console-mcp
 npm install
 npm run build
 ```
@@ -34,7 +53,7 @@ npm run build
 控制台使用 Cookie 会话。运行一次：
 
 ```bash
-yunxin-console-mcp login
+npx -y @devdengchao/yunxin-console-mcp login
 ```
 
 会打开一个专用 Chrome 配置窗口。登录成功后会保存 Cookie 到用户配置目录并自动关闭浏览器。
@@ -43,27 +62,27 @@ yunxin-console-mcp login
 如果不想打开浏览器，也可以从 DevTools 的 Network 面板复制请求头里的 Cookie：
 
 ```bash
-yunxin-console-mcp auth import --cookie "cookie1=value1; cookie2=value2"
+npx -y @devdengchao/yunxin-console-mcp auth import --cookie "cookie1=value1; cookie2=value2"
 ```
 
 或者直接在 Network 面板右键请求 → Copy → Copy as cURL，然后粘贴：
 
 ```bash
-yunxin-console-mcp auth import --curl "curl 'https://app.yunxin.163.com/frontApi/...' -H 'cookie: ...'"
+npx -y @devdengchao/yunxin-console-mcp auth import --curl "curl 'https://app.yunxin.163.com/frontApi/...' -H 'cookie: ...'"
 # 或把内容保存到文件
-yunxin-console-mcp auth import --curl-file curl.txt
+npx -y @devdengchao/yunxin-console-mcp auth import --curl-file curl.txt
 ```
 
 检查登录态：
 
 ```bash
-yunxin-console-mcp auth status
+npx -y @devdengchao/yunxin-console-mcp auth status
 ```
 
 退出登录：
 
 ```bash
-yunxin-console-mcp auth logout
+npx -y @devdengchao/yunxin-console-mcp auth logout
 ```
 
 ## MCP 客户端配置
@@ -75,9 +94,9 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
   "mcpServers": {
     "yunxin-console": {
       "command": "npx",
-      "args": ["-y", "yunxin-console-mcp"],
+      "args": ["-y", "@devdengchao/yunxin-console-mcp"],
       "env": {
-        "YUNXIN_CONSOLE_DEFAULT_APP": "DemoApp"
+        "YUNXIN_CONSOLE_DEFAULT_APP": "your-app"
       }
     }
   }
@@ -140,12 +159,11 @@ Claude Desktop / Cursor / OpenCode 等支持 stdio 的客户端：
 
 ## 验证情况
 
-详细记录见 [docs/verification.md](docs/verification.md)。
+详细记录见 [docs/verification.md](docs/verification.md)。账号、应用和数据均已脱敏。
 
-- 57 个单元/集成测试通过，覆盖 Cookie 会话、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
-- 已用真实账号和 DemoApp（appid 10000001）跑通只读工具：应用列表、应用详情、IM 配置、测试账号、用户统计、IM 消息统计、应用设置、证书、IP 白名单。
+- 58 个单元/集成测试通过，覆盖 Cookie 会话、HTTP 错误映射、应用解析、IM 配置映射、统计日期和审计日志。
+- 已在真实控制台环境跑通只读工具：应用列表、应用详情、IM 配置、测试账号、用户统计、IM 消息统计、应用设置、证书、IP 白名单。
 - 已通过 MCP 工具执行 as-is 无副作用写测试：`deletemsgtime`、`roaming`、`sendMsgCheckFriend`、`chatroomIONoNotify`、`publishoffline`、`updateInfo` 全部返回 `res:200`，回读配置无变化。
-- `queryAppInfo` 显示该应用 `testAppTag=false`、`envtype=0`，接口层没有“测试环境”标记。
 
 复跑实时只读冒烟：
 
@@ -169,6 +187,13 @@ npm run build
 npm test
 node dist/cli.js login
 node dist/cli.js auth status
+```
+
+CI 使用 Node 20/22/24，覆盖 Ubuntu 和 Windows。发布新版本：
+
+```bash
+npm version patch
+git push --follow-tags
 ```
 
 ## License
